@@ -33,6 +33,14 @@ class Strategy(BaseModel):
     start_date: Optional[str] = "2021-01-01"
     end_date: Optional[str] = datetime.now().strftime("%Y-%m-%d")
 
+    def get_instId(self):
+        if self.ticker == "BTCUSDT":
+            return "BTC-USDT-SWAP"
+        elif self.ticker == "ETHUSDT":
+            return "ETH-USDT-SWAP"
+        else:
+            raise ValueError(f"Invalid ticker: {self.ticker}")
+    
     def get_filename(self):
         return f"{self.signal.description}_{self.ticker}_{self.timeframe}_{self.start_date}_{self.end_date}_leverage_{self.leverage}_tp_{self.tp_ratio*100}_sl_{self.sl_ratio*100}.txt"
     def get_result_filename(self):

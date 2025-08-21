@@ -5,10 +5,15 @@ import pandas as pd
 import requests
 import talib
 
+from model import Signal, Strategy
 from save_candlestick import get_end_time, get_int_for_interval
+from trading.account import get_account_balance, get_max_available_size, get_positions, has_any_position, set_account_level_to_margin
+from trading.trade import close_position, open_position_with_ratio
+
 
 def my_task():
     print(f"4시간마다 실행: {datetime.now()}")
+
 
 def get_basic_data(symbol: str, interval: str):
     # data 가져오기
@@ -46,24 +51,18 @@ def get_basic_data(symbol: str, interval: str):
     df = df[["open", "high", "low", "close", "volume"]]  # 필요한 컬럼만 선택
     return df
 
+
 def get_additional_data(df: pd.DataFrame):
     # 숫자 컬럼들을 명시적으로 float로 변환
     numeric_columns = ["open", "high", "low", "close", "volume"]
     for col in numeric_columns:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
-    
+
     close_prices = df["close"]
     high_prices = df["high"]
     low_prices = df["low"]
     volume = df["volume"]
-
-    print("=== 데이터 진단 ===")
-    print(f"DataFrame shape: {df.shape}")
-    print(f"Close prices dtype: {close_prices.dtype}")
-    print(f"Close prices에 NaN 개수: {close_prices.isna().sum()}")
-    print("===================")
-
     # MACD 계산
     macd, macd_signal, macd_hist = talib.MACD(
         close_prices.values, fastperiod=12, slowperiod=26, signalperiod=9
@@ -94,65 +93,111 @@ def get_additional_data(df: pd.DataFrame):
 
     # 미분값(변화율) 계산
     print("🔄 미분값 계산 중...")
-    
+
     # MACD 미분값
     df["macd_diff"] = df["macd"].diff()
     df["macd_signal_diff"] = df["macd_signal"].diff()
     df["macd_hist_diff"] = df["macd_hist"].diff()
-    
+
     # RSI 미분값
     df["rsi_diff"] = df["rsi"].diff()
-    
+
     # Bollinger Bands 미분값
     df["bb_upper_diff"] = df["bb_upper"].diff()
     df["bb_middle_diff"] = df["bb_middle"].diff()
     df["bb_lower_diff"] = df["bb_lower"].diff()
-    
+
     # Moving Average 미분값
     df["sma_20_diff"] = df["sma_20"].diff()
     df["ema_20_diff"] = df["ema_20"].diff()
-    
+
     # 가격 미분값도 추가 (참고용)
     df["close_diff"] = df["close"].diff()
     df["volume_diff"] = df["volume"].diff()
 
     # 모든 지표가 유효한 첫 번째 인덱스 찾기
-    indicators = ["macd", "rsi", "bb_upper", "bb_middle", "bb_lower", "sma_20", "ema_20"]
+    indicators = [
+        "macd",
+        "rsi",
+        "bb_upper",
+        "bb_middle",
+        "bb_lower",
+        "sma_20",
+        "ema_20",
+    ]
     first_valid_indices = []
-    
+
     for indicator in indicators:
         first_valid = df[indicator].first_valid_index()
         if first_valid is not None:
             first_valid_indices.append(first_valid)
-    
+
     if first_valid_indices:
         # 가장 늦게 시작하는 지표의 인덱스부터 데이터를 사용
         start_timestamp = max(first_valid_indices)
         # Timestamp를 정수 위치로 변환
         start_position = df.index.get_loc(start_timestamp)
-        print(f"🔍 초기 NaN 데이터 제거: 인덱스 {start_timestamp}부터 사용 (처음 {start_position}개 행 제거)")
         df_cleaned = df.iloc[start_position:].copy()
-        print(f"📊 정리 후 데이터: {len(df_cleaned)} 행 (원본: {len(df)} 행)")
         return df_cleaned
     else:
         print("⚠️  경고: 모든 지표가 NaN입니다.")
         return df
 
-def get_all_data(symbol: str, interval: str):
-    df = get_basic_data(symbol, interval)
+
+def detect_data_and_trade(strategy: Strategy):
+    df = get_basic_data(strategy.ticker, strategy.timeframe)
     df = get_additional_data(df)
-    print(df.tail())
-    return df
-    
-def trade():
-    df = get_basic_data("BTCUSDT", "1m")
-    df = get_additional_data(df)
-    print(df.tail())
-    
-def start_detecting(symbol: str, interval: str):
+    last_data = df.iloc[-1]
+
+    has_position = has_any_position(strategy.get_instId())
+    if not has_position:
+        if strategy.signal.buy_signal_func(last_data):
+            print("🔍 매수 신호 포착")
+            open_position_with_ratio(
+                leverage=strategy.leverage,
+                ratio=strategy.input_amount_ratio,
+                sl=strategy.sl_ratio,
+                instId=strategy.get_instId(),
+            )
+        else:
+            print("🔍 매수 신호 없음")
+    else:
+        current_positions = get_positions(strategy.get_instId())
+        breakeven_price = float(current_positions[0]['bePx'])
+        tp_price = breakeven_price * (1 + strategy.tp_ratio / strategy.leverage)
+        if last_data["close"] >= tp_price:
+            close_position(instId=strategy.get_instId())
+        if strategy.signal.sell_signal_func(last_data):
+            close_position(instId=strategy.get_instId())
+    return
+
+
+def start_detecting(strategy: Strategy):
     scheduler = BlockingScheduler()
-    scheduler.add_job(lambda: get_all_data(symbol, interval), 'cron', minute='*/1')
+    scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", minute="*/1")
+    scheduler.add_job(lambda: print(f"스케줄러 실행 중.. {datetime.now()}"), "interval", seconds=30)
     scheduler.start()
 
+
 if __name__ == "__main__":
-    start_detecting("BTCUSDT", "1m")
+    signal = Signal(
+        buy_signal_func=lambda data: data["rsi"] < 15,
+        sell_signal_func=lambda data: data["rsi"] > 85,
+        description="buy_rsi_below_15_sell_rsi_above_85",
+    )
+
+    strategy = Strategy(
+        ticker="BTCUSDT",
+        timeframe="1m",
+        leverage=100,
+        maker_fee=0.0000,
+        taker_fee=0.0000,
+        tp_ratio=1.8,
+        sl_ratio=0.05,
+        input_amount_ratio=0.4,
+        entry_role="taker",
+        exit_role="taker",
+        signal=signal,
+    )
+
+    start_detecting(strategy)

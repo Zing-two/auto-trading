@@ -13,8 +13,8 @@ OKX에서 5배 레버리지로 BTC-USDT-SWAP 포지션을 여는 메인 스크�
 """
 
 import time
-from account import set_leverage, get_positions, get_account_balance, get_max_leverage
-from trade import open_btc_position_with_leverage
+from .account import set_leverage, get_positions, get_account_balance, get_max_leverage
+from .trade import open_btc_position_with_leverage
 
 def main():
     """

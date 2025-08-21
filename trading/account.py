@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 import okx.Account as Account
-from config import config
+from .config import config
 
 accountAPI = Account.AccountAPI(
     config["api_key"], config["secret_key"], config["passphrase"], False, config["flag"]
@@ -14,6 +14,10 @@ def get_account_config():
     print(f"현재 계정 모드: {account_info['data']}")
     return account_info['data']
     
+def set_account_level_to_margin():
+    accountAPI.set_account_level(acctLv="3")
+    get_account_config()
+    return
 
 def get_account_balance():
     balance = accountAPI.get_account_balance()
@@ -89,7 +93,11 @@ def get_positions(instId="BTC-USDT-SWAP"):
 
 def has_any_position(instId="BTC-USDT-SWAP"):
     positions = get_positions(instId)
-    return False if len(positions) == 1 and positions[0]['pos'] == '0' else True
+    if len(positions) == 0:
+        return False
+    if positions[0]['pos'] == '0':
+        return False
+    return True
 
 def get_account_position_risk():
     """
@@ -132,4 +140,4 @@ if __name__ == "__main__":
     # # 포지션 리스크 조회 테스트
     # print("\n=== 포지션 리스크 조회 테스트 ===")
     # get_account_position_risk()
-    get_positions()
+    get_account_config()

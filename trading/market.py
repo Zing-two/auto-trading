@@ -1,5 +1,5 @@
 import okx.MarketData as MarketData
-from config import config
+from .config import config
 
 marketDataAPI = MarketData.MarketAPI(flag=config["flag"])
 

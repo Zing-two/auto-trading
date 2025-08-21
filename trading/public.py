@@ -1,4 +1,4 @@
-from config import config
+from .config import config
 from okx.PublicData import PublicAPI
 
 publicDataAPI = PublicAPI(

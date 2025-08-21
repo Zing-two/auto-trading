@@ -47,7 +47,7 @@ python open_btc_position.py
 ### 3. 단계별 실행
 ```python
 # 개별 함수 실행
-from account import set_leverage, get_positions, get_max_leverage
+from .account import set_leverage, get_positions, get_max_leverage
 from trade import open_btc_position_with_leverage
 
 # 1. 최대 레버리지 확인
