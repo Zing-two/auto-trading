@@ -13,3 +13,6 @@ DATA COLLECTING
 - robust testing 코드 만들기
 - 실제 거래 전략 만들기
 - tp/sl이 의도한대로 동작하진 않았지만, 최소 한 틱 견디기 + sl만 처리하기
+
+
+ssh -i "conan-trading-new.pem" ubuntu@ec2-15-164-163-110.ap-northeast-2.compute.amazonaws.com

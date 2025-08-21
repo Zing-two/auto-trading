@@ -3,3 +3,4 @@ __pycache__/
 trading_log/
 data/
 raw_data/
+*.pem
