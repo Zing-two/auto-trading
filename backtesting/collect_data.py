@@ -220,7 +220,7 @@ def save_indicators_df(df: pd.DataFrame, filename: str):
     print(df[derivative_sample].iloc[55:65])
 
     # CSV로 저장
-    output_filename = f'data/{filename.split(".")[0]}_with_indicators.csv'
+    output_filename = f'backtesting/data/{filename.split(".")[0]}_with_indicators.csv'
     print(f"\n=== CSV 저장 중... ===")
 
     save_columns = [
