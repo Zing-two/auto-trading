@@ -7,7 +7,13 @@ import talib
 
 from model import Signal, Strategy
 from save_candlestick import get_end_time, get_int_for_interval
-from trading.account import get_account_balance, get_max_available_size, get_positions, has_any_position, set_account_level_to_margin
+from trading.account import (
+    get_account_balance,
+    get_max_available_size,
+    get_positions,
+    has_any_position,
+    set_account_level_to_margin,
+)
 from trading.trade import close_position, open_position_with_ratio
 
 
@@ -163,9 +169,9 @@ def detect_data_and_trade(strategy: Strategy):
             print("🔍 매수 신호 없음")
     else:
         current_positions = get_positions(strategy.get_instId())
-        breakeven_price = float(current_positions[0]['bePx'])
-        tp_price = breakeven_price * (1 + strategy.tp_ratio / strategy.leverage)
-        if last_data["close"] >= tp_price:
+        breakeven_price = float(current_positions[0]["bePx"])
+        tp_price = breakeven_price * (1 + (strategy.tp_ratio / strategy.leverage))
+        if last_data["high"] >= tp_price:
             close_position(instId=strategy.get_instId())
         if strategy.signal.sell_signal_func(last_data):
             close_position(instId=strategy.get_instId())
@@ -174,8 +180,25 @@ def detect_data_and_trade(strategy: Strategy):
 
 def start_detecting(strategy: Strategy):
     scheduler = BlockingScheduler()
-    scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", minute="*/1")
-    scheduler.add_job(lambda: print(f"스케줄러 실행 중.. {datetime.now()}"), "interval", seconds=30)
+    timeframe = strategy.timeframe
+    if timeframe == "1m":
+        scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", minute="*/1")
+    if timeframe == "5m":
+        scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", minute="*/5")
+    if timeframe == "15m":
+        scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", minute="*/15")
+    if timeframe == "30m":
+        scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", minute="*/30")
+    if timeframe == "1h":
+        scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", hour="*/1")
+    if timeframe == "4h":
+        scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", hour="*/4")
+    if timeframe == "1d":
+        scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", hour="*/24")
+    
+    scheduler.add_job(
+        lambda: print(f"스케줄러 실행 중.. {datetime.now()}"), "interval", minute="*/1"
+    )
     scheduler.start()
 
 
@@ -188,7 +211,7 @@ if __name__ == "__main__":
 
     strategy = Strategy(
         ticker="BTCUSDT",
-        timeframe="1m",
+        timeframe="4h",
         leverage=100,
         maker_fee=0.0000,
         taker_fee=0.0000,
