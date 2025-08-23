@@ -174,7 +174,7 @@ def backtest_fast(df, strat, state, side="long"):
     return state, trades
 
 
-def backtest_single_strategy(df, strat, state, side="long"):
+def backtest_single_strategy(df, strat, state: FinancialState, side="long"):
     """단일 전략 백테스트"""
     # 1차 백테스트: 승률 계산
     init_state, init_trades = backtest_fast(df, strat, state, side=side)
@@ -184,6 +184,7 @@ def backtest_single_strategy(df, strat, state, side="long"):
     kelly_critation = get_kelly_critation(init_win_rate, strat.tp_ratio, strat.sl_ratio)
     
     # 2차 백테스트: Kelly 적용
+    state.initialize()
     # logger = TradingLogger(file_name=strat.get_filename(), enable_logging=True)
     strat.input_amount_ratio = kelly_critation
     final_state, trades = backtest_fast(df, strat, state, side=side)
@@ -205,7 +206,7 @@ def backtest_multiple_strategies_same_timeframe(df, strategies: List[Strategy]):
             final_state, trades = backtest_single_strategy(df, strategy, state, side="long")
             if final_state and trades:
                 ## 파일이 없으면 생성
-                filename = f"trading_log/{strategy.get_result_filename()}_result.txt"
+                filename = f"backtesting/trading_log/{strategy.get_result_filename()}_result.txt"
                 if not os.path.exists(filename):
                     f = open(filename, "w")
                 else:
