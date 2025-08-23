@@ -1,0 +1,1 @@
+buy_rsi_below_15_sell_rsi_above_85_BTCUSDT_4h_2023-02-01_2025-08-23_leverage_100_tp_180.0_sl_8.0.txt, 1.0, 1222752.87, 22.28

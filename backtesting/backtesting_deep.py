@@ -4,7 +4,7 @@ from typing import List
 import os
 from datetime import datetime
 
-from model import FinancialState, Strategy, Signal, Position, TradeLog, Side, Role, TradingLogger
+from model.model import FinancialState, Strategy, Signal, Position, TradeLog, Side, Role, TradingLogger
 
 # matplotlib import with fallback
 try:
@@ -258,7 +258,7 @@ def run_backtesting_by_timeframe(strategies: list[Strategy]):
         ticker = strategies[0].ticker
         try:
             # 데이터 로드 (한 번만)
-            df = pd.read_csv(f"data/{ticker}_{timeframe}_with_indicators.csv")
+            df = pd.read_csv(f"backtesting/data/{ticker}_{timeframe}_with_indicators.csv")
             df.set_index(df.columns[0], inplace=True)
             print(f"데이터 로드 완료: {len(df)}개 행, {df.index[0]} ~ {df.index[-1]}")
             

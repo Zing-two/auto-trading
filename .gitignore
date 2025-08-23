@@ -1,6 +1,8 @@
 .env
 __pycache__/
-trading_log/
-data/
-raw_data/
+backtesting/trading_log/
+backtesting/data/
+backtesting/raw_data/
 *.pem
+
+README_CONAN.md

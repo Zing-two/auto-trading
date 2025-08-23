@@ -1,15 +1,9 @@
-from dataclasses import dataclass
-import time
 import pandas as pd
-from pydantic import BaseModel
-from typing import Callable, Literal, Optional
-import os
-import json
 import threading
 from datetime import datetime
 
-from backtesting_deep import backtest_fast
-from model import (
+from backtesting.backtesting_deep import backtest_fast
+from model.model import (
     Signal,
     FinancialState,
     Position,
@@ -319,7 +313,7 @@ DATA_CACHE = {}
 
 def load_data_once(ticker, timeframe):
     if (ticker, timeframe) not in DATA_CACHE:
-        df = pd.read_csv(f"data/{ticker}_{timeframe}_with_indicators.csv")
+        df = pd.read_csv(f"backtesting/data/{ticker}_{timeframe}_with_indicators.csv")
         df.set_index(df.columns[0], inplace=True)
         DATA_CACHE[(ticker, timeframe)] = df
     return DATA_CACHE[(ticker, timeframe)]
@@ -363,7 +357,7 @@ def get_backtesting_with_kelly_optimization(
 
     except FileNotFoundError:
         print(
-            f"데이터 파일을 찾을 수 없습니다: data/{strategy.ticker}_{strategy.timeframe}_with_indicators.csv"
+            f"데이터 파일을 찾을 수 없습니다: backtesting/data/{strategy.ticker}_{strategy.timeframe}_with_indicators.csv"
         )
         print("save_talib.py를 먼저 실행하여 지표가 포함된 데이터를 생성해주세요.")
     except Exception as e:

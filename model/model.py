@@ -125,7 +125,7 @@ class TradeLog:
 class TradingLogger:
     """거래 로그를 기록하는 클래스"""
 
-    def __init__(self, file_name: str, log_dir: str = "trading_log", enable_logging: bool = True):
+    def __init__(self, file_name: str, log_dir: str = "backtesting/trading_log", enable_logging: bool = True):
         self.file_name = file_name
         self.log_dir = log_dir
         self.enable_logging = enable_logging

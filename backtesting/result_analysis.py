@@ -9,7 +9,8 @@ def show_top_results(filename: str, count: int):
         print(i)
 
 if __name__ == "__main__":
-    filename = "trading_log/buy_rsi_below_15_sell_rsi_above_85_BTCUSDT_result.txt"
-    # filename = "trading_log/rsi_below_15_BTCUSDT_result.txt"
+    foldername = "backtesting/trading_log"
+    filename = f"{foldername}/buy_rsi_below_15_sell_rsi_above_85_BTCUSDT_result.txt"
+    # filename = f"{folder_name}/rsi_below_15_BTCUSDT_result.txt"
     count = 10
     show_top_results(filename, count)

@@ -5,8 +5,8 @@ import pandas as pd
 import requests
 import talib
 
-from model import Signal, Strategy
-from save_candlestick import get_end_time, get_int_for_interval
+from model.model import Signal, Strategy
+from backtesting.save_candlestick import get_end_time, get_int_for_interval
 from trading.account import (
     get_account_balance,
     get_max_available_size,

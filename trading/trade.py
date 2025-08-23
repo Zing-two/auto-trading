@@ -2,7 +2,7 @@ import time
 from math import floor
 import okx.Trade as Trade
 
-from notification.mail import send_email
+from utils.mail import send_email
 from .config import config
 from .account import (
     get_account_balance,
@@ -117,7 +117,7 @@ def open_position_with_ratio(
         비율:{ratio}
         스톱로스:{sl}
         """,
-        "juhyun.kim0204@gmail.com",
+        config["email_to"],
     )
     return position
 
@@ -129,7 +129,7 @@ def close_position(instId="BTC-USDT-SWAP", tdMode="isolated"):
         f"""{instId} 포지션 종료 알림
         전체 잔고: {get_account_balance()} USDT
         """,
-        "juhyun.kim0204@gmail.com",
+        config["email_to"],
     )
     return result
 
@@ -165,5 +165,5 @@ def setup_sl(instId="BTC-USDT-SWAP", tdMode="isolated", sl=0.5, leverage=5, side
 if __name__ == "__main__":
     print("BTC 포지션 오픈 테스트...")
     # 간단한 포지션 오픈
-    print(open_position_with_ratio(leverage=50, ratio=0.8, sl=0.5))
+    print(open_position_with_ratio(leverage=2, ratio=0.1, sl=0.5))
     close_position()
