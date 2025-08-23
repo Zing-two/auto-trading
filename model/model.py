@@ -146,13 +146,13 @@ class TradingLogger:
 
     def _write_log(self, message):
         """로그 파일에 메시지 기록"""
-        if not self.enable_logging:
-            return
         with open(self.log_file, "a", encoding="utf-8") as f:
             f.write(f"{message}\n")
 
     def record_balance(self, timestamp, balance):
         """잔고 변화 기록 (그래프용)"""
+        if not self.enable_logging:
+            return
         # timestamp를 datetime으로 변환
         if isinstance(timestamp, str):
             try:
@@ -280,14 +280,10 @@ class TradingLogger:
             return
         self._write_log(f"\n[{timestamp}] 🔵 포지션 진입")
         self._write_log(f"사이드: {position.side.upper()}")
+        self._write_log(f"현재 잔고: {state.balance:,.2f}")
         self._write_log(f"진입가: {position.entry_price:,.4f}")
-        self._write_log(f"수량: {position.qty:,.6f}")
-        self._write_log(f"명목가치: {position.notional:,.2f}")
         self._write_log(f"TP 가격: {position.tp_price:,.4f}")
         self._write_log(f"SL 가격: {position.sl_price:,.4f}")
-        self._write_log(f"진입 수수료: {position.entry_fee_paid:,.2f}")
-        self._write_log(f"잔고: {state.balance:,.2f}")
-        self._write_log(f"에쿼티: {state.equity:,.2f}")
 
     def log_position_close(self, timestamp, trade_log: TradeLog, state: FinancialState, reason: str):
         """포지션 청산 로그"""
@@ -297,16 +293,10 @@ class TradingLogger:
 
         self._write_log(f"\n[{timestamp}] 🔴 포지션 청산 ({reason.upper()})")
         self._write_log(f"사이드: {trade_log.side.upper()}")
+        self._write_log(f"현재 잔고: {state.balance:,.2f}")
         self._write_log(f"진입가: {trade_log.entry_price:,.4f}")
         self._write_log(f"청산가: {trade_log.exit_price:,.4f}")
-        self._write_log(f"수량: {trade_log.qty:,.6f}")
-        self._write_log(f"진입 수수료: {trade_log.entry_fee:,.2f}")
-        self._write_log(f"청산 수수료: {trade_log.exit_fee:,.2f}")
         self._write_log(f"실현 손익: {trade_log.realized_pnl:,.2f}")
-        self._write_log(f"ROE: {trade_log.roe*100:,.2f}%")
-        self._write_log(f"거래 기간: {duration}")
-        self._write_log(f"잔고: {state.balance:,.2f}")
-        self._write_log(f"에쿼티: {state.equity:,.2f}")
         self._write_log(f"누적 손익: {state.accumulated_pnl:,.2f}")
 
         # JSON 데이터에도 저장

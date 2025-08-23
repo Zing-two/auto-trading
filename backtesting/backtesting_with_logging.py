@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 import threading
 from datetime import datetime
@@ -40,9 +41,11 @@ def open_position(row, state: FinancialState, strat: Strategy, side: Side, now):
     notional = state.equity * strat.input_amount_ratio * strat.leverage
     qty = notional / price
     fee_rate = strat.maker_fee if strat.entry_role == "maker" else strat.taker_fee
-    entry_fee = notional * fee_rate
+    # entry_fee = notional * fee_rate
+    entry_fee = state.balance * strat.input_amount_ratio * fee_rate * strat.leverage
 
     # 수수료 차감
+    
     state.balance -= entry_fee
 
     # TP/SL 가격 계산 (ROE 기준)
@@ -126,7 +129,6 @@ def backtest(
     logger: TradingLogger = None,
 ):
     """메인 백테스트 함수"""
-    import time
 
     start_time = time.time()
 
@@ -137,6 +139,7 @@ def backtest(
     trades = []
     df_filtered = df.copy()
 
+    # df 필터링하기
     try:
         start_date = pd.to_datetime(strat.start_date)
         end_date = pd.to_datetime(strat.end_date)
@@ -157,6 +160,7 @@ def backtest(
 
     df = df_filtered
 
+    # 거래하기
     for i in range(len(df)):
         if i == 0:  # 첫 번째 데이터는 건너뛰기 (이전 데이터가 없음)
             continue
@@ -167,12 +171,14 @@ def backtest(
         if logger:
             logger.record_balance(data.name, state.balance)
 
-                
         ## 진입 시도
         if position is None:
             if strat.signal.buy_signal_func(data_before):
                 position = open_position(data, state, strat, side, data.name)
-        
+                # trades.append(position)
+                if logger:
+                    logger.log_position_open(data.name, position, state)
+
         ## 진입이 되자마자 청산하는 경우도 있으니, 바로 체크
         if position is not None:
             if position.side == "long":
@@ -181,16 +187,22 @@ def backtest(
             else:
                 hit_sl = data["high"] >= position.sl_price
                 hit_tp = data["low"] <= position.tp_price
-            
+
             if hit_sl or hit_tp:
-                trade_log = close_position(data, position, state, strat, data.name, "tp" if hit_tp else "sl")
+                trade_log = close_position(
+                    data, position, state, strat, data.name, "tp" if hit_tp else "sl"
+                )
                 trades.append(trade_log)
                 position = None
-        
+
         if position is not None:
             if strat.signal.sell_signal_func(data):
-                trade_log = close_position(data, position, state, strat, data.name, "sell")
+                trade_log = close_position(
+                    data, position, state, strat, data.name, "sell"
+                )
                 trades.append(trade_log)
+                if logger:
+                    logger.log_position_close(data.name, trade_log, state, "sell")
                 position = None
 
         # 파산 체크 (잔고가 초기 자본의 1% 미만)
@@ -304,7 +316,7 @@ def get_kelly_critation(win_rate, tp_ratio, sl_ratio):
         ),
     )
     print("K", kelly)
-    return kelly / 2
+    return kelly
 
 
 # 전역 변수로 데이터 캐싱
@@ -327,25 +339,27 @@ def get_backtesting_with_kelly_optimization(
         df = load_data_once(strategy.ticker, strategy.timeframe)
 
         # 1차 백테스트: 최소한의 정보만 수집
+        print(f"1차 백테스트 시작: {strategy.get_filename()}")
         init_state, init_trades = backtest_fast(df, strategy, state, side="long")
+        print(f"1차 백테스트 완료: {strategy.get_filename()}")
         init_win_rate = get_win_rate(init_trades) / 100
+        print(f"1차 백테스트 승률: {init_win_rate}")
 
         # Kelly Criterion 계산
         kelly_critation = get_kelly_critation(
             init_win_rate, strategy.tp_ratio, strategy.sl_ratio
         )
-
+        print(f"Kelly Criterion: {kelly_critation}")
+        state.initialize()
         # 2차 백테스트: Kelly 적용
         strategy.input_amount_ratio = kelly_critation
+        print(f"Kelly Criterion 적용 후 백테스트 시작: {strategy.get_filename()}")
         final_state, trades = backtest(df, strategy, state, side="long", logger=logger)
 
-        # 멀티쓰레드 환경에서는 그래프 생성 건너뛰기 (NSWindow 에러 방지)
+        print(f"Kelly Criterion 적용 후 백테스트 완료: {strategy.get_filename()}")
+        
         # 잔고 그래프 생성 확인
-        if (
-            logger
-            and logger.balance_history
-            and threading.current_thread() is threading.main_thread()
-        ):
+        if logger and logger.balance_history:
             try:
                 graph_path = logger.generate_balance_graph(strategy)
                 if graph_path:
@@ -366,20 +380,20 @@ def get_backtesting_with_kelly_optimization(
 
 if __name__ == "__main__":
     signal = Signal(
-        buy_signal_func=lambda data: data["rsi"] < 15,
-        sell_signal_func=lambda data: data["rsi"] > 85,
+        buy_signal_func=lambda data: data["rsi"] < 10,
+        sell_signal_func=lambda data: data["rsi"] > 80,
         description="buy_rsi_below_15_sell_rsi_above_85",
     )
 
     strategy = Strategy(
         ticker="BTCUSDT",
-        timeframe="4h",
+        timeframe="15m",
         leverage=100,
         maker_fee=0.0002,
         taker_fee=0.0005,
         tp_ratio=1.8,
-        sl_ratio=0.04,
-        input_amount_ratio=0.5,
+        sl_ratio=0.05,
+        input_amount_ratio=0.3,
         entry_role="taker",
         exit_role="taker",
         signal=signal,
@@ -389,7 +403,6 @@ if __name__ == "__main__":
 
     # 초기 상태 설정
     state = FinancialState(initial_balance=1000000)
-    # 멀티쓰레드 환경에서는 그래프 생성을 위해 로깅 비활성화
     logger = TradingLogger(file_name=strategy.get_filename(), enable_logging=True)
 
     final_state, trades = get_backtesting_with_kelly_optimization(
