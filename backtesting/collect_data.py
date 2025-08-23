@@ -6,7 +6,6 @@ import talib
 from utils.utils import get_end_time, get_int_for_interval
 import requests
 
-
 def get_save_btc_data(symbol: str, interval: str, limit: int, start_time: int):
     end_time = get_end_time(start_time, interval, limit)
     url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval={interval}&limit={limit}&startTime={start_time}&endTime={end_time}"
@@ -268,7 +267,6 @@ def save_indicators_df(df: pd.DataFrame, filename: str):
     print(f"\n=== 저장된 데이터 마지막 10줄 미리보기 ===")
     print(df[save_columns].tail(10))
     return
-
 
 if __name__ == "__main__":
     symbols = ["BTCUSDT", "ETHUSDT"]

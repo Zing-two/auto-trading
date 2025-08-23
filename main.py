@@ -6,7 +6,7 @@ import requests
 import talib
 
 from model.model import Signal, Strategy
-from backtesting.save_candlestick import get_end_time, get_int_for_interval
+from utils.utils import get_int_for_interval
 from trading.account import (
     get_account_balance,
     get_max_available_size,
@@ -221,7 +221,7 @@ if __name__ == "__main__":
         taker_fee=0.0005,
         tp_ratio=1.8,
         sl_ratio=0.05,
-        input_amount_ratio=0.4,
+        input_amount_ratio=1,
         entry_role="taker",
         exit_role="taker",
         signal=signal,
