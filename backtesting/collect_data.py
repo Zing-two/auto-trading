@@ -43,7 +43,7 @@ def get_save_btc_data(symbol: str, interval: str, limit: int, start_time: int):
 
     print(df.head())
     # save into csv
-    filename = f"raw_data/{symbol}_{interval}.csv"
+    filename = f"backtesting/raw_data/{symbol}_{interval}.csv"
     # 파일이 존재하는지 확인하여 헤더 포함 여부 결정
     file_exists = os.path.isfile(filename)
     df.to_csv(filename, index=True, mode="a", header=not file_exists)
@@ -52,7 +52,7 @@ def get_save_btc_data(symbol: str, interval: str, limit: int, start_time: int):
     return
 
 def add_indicators_df(filename: str):
-    df = pd.read_csv(f"raw_data/{filename}")
+    df = pd.read_csv(f"backtesting/raw_data/{filename}")
     # 숫자 컬럼들을 명시적으로 float로 변환
     numeric_columns = ["open", "high", "low", "close", "volume"]
     for col in numeric_columns:
