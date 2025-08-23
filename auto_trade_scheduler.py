@@ -186,18 +186,22 @@ def start_detecting(strategy: Strategy):
     if timeframe == "5m":
         scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", minute="*/5")
     if timeframe == "15m":
-        scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", minute="*/15")
+        scheduler.add_job(
+            lambda: detect_data_and_trade(strategy), "cron", minute="*/15"
+        )
     if timeframe == "30m":
-        scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", minute="*/30")
+        scheduler.add_job(
+            lambda: detect_data_and_trade(strategy), "cron", minute="*/30"
+        )
     if timeframe == "1h":
         scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", hour="*/1")
     if timeframe == "4h":
         scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", hour="*/4")
     if timeframe == "1d":
         scheduler.add_job(lambda: detect_data_and_trade(strategy), "cron", hour="*/24")
-    
+
     scheduler.add_job(
-        lambda: print(f"스케줄러 실행 중.. {datetime.now()}"), "interval", minute="*/1"
+        lambda: print(f"스케줄러 실행 중.. {datetime.now()}"), "interval", seconds=30
     )
     scheduler.start()
 
