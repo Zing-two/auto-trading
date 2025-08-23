@@ -113,7 +113,6 @@ def open_position_with_ratio(
         f"""{instId} 포지션 오픈 알림
         전체 잔고: {get_account_balance()} USDT
         진입 금액: {usdt_amount} USDT
-        진입 가격: {position['avgPx']} USDT
         레버리지:{leverage}
         비율:{ratio}
         스톱로스:{sl}
