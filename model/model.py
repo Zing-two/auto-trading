@@ -130,6 +130,9 @@ class TradingLogger:
         self.log_dir = log_dir
         self.enable_logging = enable_logging
         os.makedirs(log_dir, exist_ok=True)
+        os.makedirs(os.path.join(log_dir, "graph"), exist_ok=True)
+        os.makedirs(os.path.join(log_dir, "txt"), exist_ok=True)
+        os.makedirs(os.path.join(log_dir, "json"), exist_ok=True)
         self.session_start = datetime.now()
         self.session_id = self.session_start.strftime("%Y%m%d_%H%M%S")
         self.log_file = os.path.join(log_dir, f"txt/{file_name}.txt")
